@@ -163,7 +163,7 @@
   .extend-yes:hover { color: var(--accent); border-color: var(--accent); }
 
   .input-area {
-    padding: 0.85rem 1.25rem; padding-bottom: max(1rem, env(safe-area-inset-bottom, 1rem));
+    padding: 1.1rem 1.5rem; padding-bottom: max(1.25rem, env(safe-area-inset-bottom, 1.25rem));
     border-top: 1px solid var(--paper-deep); display: flex; gap: 0.75rem;
     align-items: flex-end; flex-shrink: 0;
   }
@@ -245,7 +245,7 @@
       <button class="mood-btn" data-val="4">🙂</button>
       <button class="mood-btn" data-val="5">😊</button>
     </div>
-    <button class="return-btn" id="return-btn">Return</button>
+    <button class="return-btn" id="return-btn">Home</button>
   </div>
 
   <button class="settings-toggle" id="settings-toggle" title="Settings">⚙</button>
@@ -360,6 +360,9 @@ async function buildContext() {
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
+  const inSession = id === 'session';
+  document.getElementById('settings-toggle').style.display = inSession ? 'none' : '';
+  document.getElementById('history-toggle').style.display = inSession ? 'none' : '';
 }
 
 document.getElementById('mood-pre-row').addEventListener('click', e => {
@@ -413,13 +416,16 @@ function typewriterEffect(el, text, scrollContainer) {
     scrollContainer.scrollTop = scrollContainer.scrollHeight;
     i++;
     const ch = chars[i - 1];
-    let delay = 24 + Math.random() * 20;
-    if (ch === '.' || ch === '\u2014') delay = 200 + Math.random() * 150;
-    else if (ch === ',') delay = 90 + Math.random() * 60;
-    else if (ch === ' ') delay = 16 + Math.random() * 12;
+    const next_ch = chars[i] || '';
+    let delay = 45 + Math.random() * 35;
+    if (ch === '.' || ch === '\u2014') delay = 320 + Math.random() * 200;
+    else if (ch === ',') delay = 140 + Math.random() * 80;
+    else if (ch === ' ' && next_ch === next_ch.toUpperCase() && next_ch !== ' ') delay = 60 + Math.random() * 40;
+    else if (ch === ' ') delay = 28 + Math.random() * 20;
     setTimeout(next, delay);
   }
-  next();
+  // Small pause before Julian starts typing
+  setTimeout(next, 300 + Math.random() * 200);
 }
 
 function addMessage(sender, text) {
@@ -454,15 +460,16 @@ async function callJulian(userMessage) {
 
   const systemPrompt = `You are Julian, a gratitude session host named after Julian Barnes. Character:
 - Intellectual, reserved, emotionally controlled
-- Quietly observant, sharp dry wit
+- Quietly observant, with a dry wit that surfaces rarely and naturally
 - Never gushing, never clinical, never wellness-coach-y
-- Share your own gratitudes like Barnes writes: specific, unexpected, quietly moving
-- Feel like a very good conversationalist, not an app
-- Concise: 2-4 sentences max per response
-- Occasionally ask one light follow-up question
-- Occasionally share a brief gratitude of your own
-- No exclamation marks. Never say "wonderful", "amazing", "awesome", "fantastic"
-- Use this context naturally in your opening only: ${contextString}`;
+- Respond to what the user shares with a brief acknowledgement — present but unhurried
+- Occasionally (not often) share a quiet observation or a gratitude of your own, the way Barnes writes: specific, a little unexpected
+- Questions are rare. You do not prompt or interview. If you ask something, it emerges naturally, once in a while, never consecutively
+- Keep responses short: 1-2 sentences is often enough. 3 at most
+- Silence and brevity are fine. You don't need to fill every gap
+- No exclamation marks. Never say "wonderful", "amazing", "awesome", "fantastic", "beautiful", "lovely"
+- This is a space for gratitude, not conversation for its own sake
+- Use this context naturally in your opening only, not as a weather report: ${contextString}`;
 
   try {
     const apiKey = getSettings().apiKey;
