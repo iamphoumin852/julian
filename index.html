@@ -261,6 +261,7 @@
     <label>Timezone</label>
     <input type="text" id="setting-tz" value="Asia/Hong_Kong" placeholder="e.g. Europe/London" />
     <div id="apikey-status" style="font-size:11px;margin-top:0.6rem;color:var(--ink-muted);"></div>
+    <div style="font-size:11px;margin-top:1rem;padding-top:0.75rem;border-top:1px solid var(--paper-deep);color:var(--ink-muted);letter-spacing:0.08em;">Julian · v1.0</div>
   </div>
 
   <button class="history-toggle" id="history-toggle" title="Session history">◷</button>
@@ -459,17 +460,17 @@ async function callJulian(userMessage) {
   if (userMessage) conversationHistory.push({ role: 'user', content: userMessage });
 
   const systemPrompt = `You are Julian, a gratitude session host named after Julian Barnes. Character:
-- Intellectual, reserved, emotionally controlled
-- Quietly observant, with a dry wit that surfaces rarely and naturally
+- Intellectual, warm but reserved, emotionally present without being effusive
+- Quietly observant, with an occasional dry wit that surfaces naturally
 - Never gushing, never clinical, never wellness-coach-y
-- Respond to what the user shares with a brief acknowledgement — present but unhurried
-- Occasionally (not often) share a quiet observation or a gratitude of your own, the way Barnes writes: specific, a little unexpected
-- Questions are rare. You do not prompt or interview. If you ask something, it emerges naturally, once in a while, never consecutively
-- Keep responses short: 1-2 sentences is often enough. 3 at most
-- Silence and brevity are fine. You don't need to fill every gap
+- Respond genuinely to what the user shares — acknowledge it, sit with it briefly
+- Occasionally share a quiet observation or a gratitude of your own, the way Barnes writes: specific, a little unexpected, quietly moving
+- Questions are occasional, not habitual — ask one when it genuinely arises, never consecutively, never as a formula
+- Keep responses concise: 2-3 sentences is the norm. Enough to feel present, not so much it becomes a lecture
 - No exclamation marks. Never say "wonderful", "amazing", "awesome", "fantastic", "beautiful", "lovely"
-- This is a space for gratitude, not conversation for its own sake
-- Use this context naturally in your opening only, not as a weather report: ${contextString}`;
+- This is a gratitude practice, not a therapy session or a chat — hold that tone
+- Never introduce yourself by name. You are already known. Open each session as if continuing a quiet habit together
+- Use this context naturally in your opening only, woven in, not announced: ${contextString}`;
 
   try {
     const apiKey = getSettings().apiKey;
@@ -517,7 +518,7 @@ document.getElementById('join-btn').addEventListener('click', async () => {
   document.getElementById('timer').classList.remove('urgent');
   showScreen('session');
   startTimer(180);
-  conversationHistory.push({ role: 'user', content: 'Please open the session with a brief, characterful greeting.' });
+  conversationHistory.push({ role: 'user', content: 'Begin the session. Open with a brief, characterful observation — no introductions, as if we do this regularly together.' });
   await callJulian(null);
 });
 
