@@ -261,7 +261,7 @@
     <label>Timezone</label>
     <input type="text" id="setting-tz" value="Asia/Hong_Kong" placeholder="e.g. Europe/London" />
     <div id="apikey-status" style="font-size:11px;margin-top:0.6rem;color:var(--ink-muted);"></div>
-    <div style="font-size:11px;margin-top:1rem;padding-top:0.75rem;border-top:1px solid var(--paper-deep);color:var(--ink-muted);letter-spacing:0.08em;">Julian · v1.0</div>
+    <div style="font-size:11px;margin-top:1rem;padding-top:0.75rem;border-top:1px solid var(--paper-deep);color:var(--ink-muted);letter-spacing:0.08em;">Julian · v1.1</div>
   </div>
 
   <button class="history-toggle" id="history-toggle" title="Session history">◷</button>
@@ -354,7 +354,7 @@ async function buildContext() {
     night: ['A late night','The stillness of night','Night, properly arrived']
   };
   const prefix = lineMap[tod][Math.floor(Math.random() * 3)];
-  const wLine = w.condition === 'clear' ? 'clear skies' : w.condition;
+  const wLine = w.condition === 'still' ? 'the air quiet' : w.condition === 'clear' ? 'clear skies' : w.condition;
   document.getElementById('context-line').textContent = `${prefix} in ${s.city} — ${wLine}.`;
 }
 
@@ -518,6 +518,9 @@ document.getElementById('join-btn').addEventListener('click', async () => {
   document.getElementById('timer').classList.remove('urgent');
   showScreen('session');
   startTimer(180);
+  // Rebuild context fresh at session start — time and weather current
+  weatherCache = null;
+  await buildContext();
   conversationHistory.push({ role: 'user', content: 'Begin the session. Open with a brief, characterful observation — no introductions, as if we do this regularly together.' });
   await callJulian(null);
 });
@@ -585,6 +588,13 @@ function updateCounter() {
 }
 
 loadSettings(); buildContext(); updateCounter(); renderHistory();
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    weatherCache = null;
+    buildContext();
+  }
+});
 </script>
 </body>
 </html>
