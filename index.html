@@ -870,21 +870,30 @@ async function callJulian(userMessage) {
         messages: conversationHistory
       })
     });
-    const data = await response.json();
-    if (!response.ok) {
-      const errMsg = data?.error?.message || `API error ${response.status}`;
-      hideTyping();
-      addMessage('julian', `(${errMsg})`);
+    const raw = await response.text();
+    hideTyping();
+    let data;
+    try { data = JSON.parse(raw); } catch(pe) {
+      addMessage('julian', `(Parse error: ${pe.message} — raw: ${raw.slice(0,120)})`);
       isJulianTyping = false;
       return;
     }
-    const reply = data.content?.[0]?.text || 'A quiet moment.';
-    hideTyping();
+    if (!response.ok) {
+      addMessage('julian', `(API ${response.status}: ${data?.error?.message || raw.slice(0,120)})`);
+      isJulianTyping = false;
+      return;
+    }
+    const reply = data?.content?.[0]?.text;
+    if (!reply) {
+      addMessage('julian', `(Empty reply — keys: ${Object.keys(data).join(', ')} — type: ${data?.content?.[0]?.type})`);
+      isJulianTyping = false;
+      return;
+    }
     addMessage('julian', reply);
     conversationHistory.push({ role: 'assistant', content: reply });
   } catch (e) {
     hideTyping();
-    addMessage('julian', `(Connection error: ${e.message})`);
+    addMessage('julian', `(Fetch error: ${e.message})`);
   }
   isJulianTyping = false;
 }
