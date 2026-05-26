@@ -294,10 +294,10 @@
   <div class="settings-panel" id="settings-panel">
     <label>Anthropic API key</label>
     <input type="password" id="setting-apikey" placeholder="sk-ant-…" autocomplete="off" />
-    <label>JSONBin API key <span style="font-size:10px;text-transform:none;letter-spacing:0">(optional — enables memory)</span></label>
-    <input type="password" id="setting-jsonbin" placeholder="$2a$10$…" autocomplete="off" />
-    <label>JSONBin Bin ID <span style="font-size:10px;text-transform:none;letter-spacing:0">(create one at jsonbin.io)</span></label>
-    <input type="text" id="setting-binid" placeholder="6…" autocomplete="off" />
+    <label>GitHub token <span style="font-size:10px;text-transform:none;letter-spacing:0">(optional — enables memory)</span></label>
+    <input type="password" id="setting-ghtoken" placeholder="github_pat_…" autocomplete="off" />
+    <label>Gist ID <span style="font-size:10px;text-transform:none;letter-spacing:0">(create a private gist at gist.github.com)</span></label>
+    <input type="text" id="setting-gistid" placeholder="a1b2c3d4…" autocomplete="off" />
     <label>City</label>
     <input type="text" id="setting-city" value="Hong Kong" />
     <label>Latitude</label>
@@ -316,7 +316,7 @@
       <button class="reset-confirm-no" id="reset-confirm-no">Cancel</button>
     </div>
     <div class="settings-divider"></div>
-    <div style="font-size:10px;color:var(--ink-muted);line-height:1.5;">Your brief is stored on JSONBin's servers. Nothing else is shared externally beyond the Anthropic API and Open-Meteo.</div>
+    <div style="font-size:10px;color:var(--ink-muted);line-height:1.5;">Your brief is stored in a private GitHub Gist. Nothing else is shared externally beyond the Anthropic API and Open-Meteo.</div>
     <div style="font-size:11px;margin-top:0.75rem;color:var(--ink-muted);letter-spacing:0.08em;">Julian · v1.2</div>
   </div>
 
@@ -360,36 +360,44 @@ function saveMemoryLocal() {
   localStorage.setItem('julian_memory', JSON.stringify({ brief: standingBrief, summaries: sessionSummaries, updatedAt: new Date().toISOString() }));
 }
 
-// ─── JSONBin helpers ──────────────────────────────────────────────────────────
-function getJsonBinConfig() {
-  const key = document.getElementById('setting-jsonbin').value.trim();
-  const binId = document.getElementById('setting-binid').value.trim();
-  return { key, binId };
+// ─── GitHub Gist helpers ──────────────────────────────────────────────────────
+function getGistConfig() {
+  const token = document.getElementById('setting-ghtoken').value.trim();
+  const gistId = document.getElementById('setting-gistid').value.trim();
+  return { token, gistId };
 }
 async function loadMemoryRemote() {
-  const { key, binId } = getJsonBinConfig();
-  if (!key || !binId) return false;
+  const { token, gistId } = getGistConfig();
+  if (!token || !gistId) return false;
   try {
-    const res = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
-      headers: { 'X-Master-Key': key }
+    const res = await fetch(`https://api.github.com/gists/${gistId}`, {
+      headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json' }
     });
     if (!res.ok) return false;
     const data = await res.json();
-    const record = data.record || {};
+    const file = data.files && data.files['julian_memory.json'];
+    if (!file) return false;
+    const record = JSON.parse(file.content || '{}');
     standingBrief = record.brief || null;
     sessionSummaries = record.summaries || [];
-    saveMemoryLocal(); // keep local in sync
+    saveMemoryLocal();
     return true;
   } catch { return false; }
 }
 async function saveMemoryRemote() {
-  const { key, binId } = getJsonBinConfig();
-  if (!key || !binId) { saveMemoryLocal(); return; }
+  const { token, gistId } = getGistConfig();
+  if (!token || !gistId) { saveMemoryLocal(); return; }
   try {
-    await fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'X-Master-Key': key },
-      body: JSON.stringify({ brief: standingBrief, summaries: sessionSummaries, updatedAt: new Date().toISOString() })
+    await fetch(`https://api.github.com/gists/${gistId}`, {
+      method: 'PATCH',
+      headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        files: {
+          'julian_memory.json': {
+            content: JSON.stringify({ brief: standingBrief, summaries: sessionSummaries, updatedAt: new Date().toISOString() }, null, 2)
+          }
+        }
+      })
     });
     saveMemoryLocal();
   } catch { saveMemoryLocal(); }
@@ -407,8 +415,8 @@ function getSettings() {
 }
 function saveSettings() {
   const s = getSettings();
-  const jb = getJsonBinConfig();
-  localStorage.setItem('julian_settings', JSON.stringify({ ...s, jsonbinKey: jb.key, jsonbinBinId: jb.binId }));
+  const gh = getGistConfig();
+  localStorage.setItem('julian_settings', JSON.stringify({ ...s, ghToken: gh.token, gistId: gh.gistId }));
   const el = document.getElementById('apikey-status');
   el.textContent = s.apiKey ? 'Keys saved.' : 'No Anthropic key — sessions will not work.';
   el.style.color = s.apiKey ? 'var(--accent)' : 'var(--danger-soft)';
@@ -417,8 +425,8 @@ function loadSettings() {
   try {
     const s = JSON.parse(localStorage.getItem('julian_settings') || '{}');
     if (s.apiKey) document.getElementById('setting-apikey').value = s.apiKey;
-    if (s.jsonbinKey) document.getElementById('setting-jsonbin').value = s.jsonbinKey;
-    if (s.jsonbinBinId) document.getElementById('setting-binid').value = s.jsonbinBinId;
+    if (s.ghToken) document.getElementById('setting-ghtoken').value = s.ghToken;
+    if (s.gistId) document.getElementById('setting-gistid').value = s.gistId;
     if (s.city) document.getElementById('setting-city').value = s.city;
     if (s.lat) document.getElementById('setting-lat').value = s.lat;
     if (s.lon) document.getElementById('setting-lon').value = s.lon;
