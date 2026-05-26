@@ -65,23 +65,28 @@
   .join-btn.ready:hover { background: var(--accent); }
   .session-counter { margin-top: 1.25rem; font-size: 11px; color: var(--ink-muted); letter-spacing: 0.1em; text-align: center; min-height: 1.2em; }
 
-  /* Settings & History toggles */
-  .settings-toggle, .history-toggle {
+  /* Bottom toggles — settings (right), history (left), brief (centre) */
+  .settings-toggle, .history-toggle, .brief-toggle {
     position: fixed; bottom: max(1.5rem, env(safe-area-inset-bottom, 1.5rem));
     background: none; border: none; cursor: pointer; color: var(--ink-muted);
     font-size: 18px; transition: color 0.2s; z-index: 10;
   }
   .settings-toggle { right: 1.5rem; }
   .history-toggle { left: 1.5rem; }
-  .settings-toggle:hover, .history-toggle:hover { color: var(--ink); }
-  .settings-panel, .history-panel {
+  .brief-toggle { left: 50%; transform: translateX(-50%); font-size: 14px; letter-spacing: 0.12em; text-transform: uppercase; font-family: 'Jost', sans-serif; }
+  .settings-toggle:hover, .history-toggle:hover, .brief-toggle:hover { color: var(--ink); }
+
+  /* Panels */
+  .settings-panel, .history-panel, .brief-panel {
     position: fixed; bottom: calc(max(1.5rem, env(safe-area-inset-bottom, 1.5rem)) + 2.5rem);
     background: var(--paper-warm); border: 1px solid var(--paper-deep);
     padding: 1.25rem 1.5rem; display: none; z-index: 20;
   }
-  .settings-panel { right: 1.5rem; width: 240px; }
+  .settings-panel { right: 1.5rem; width: 260px; }
   .history-panel { left: 1.5rem; width: 280px; max-height: 320px; overflow-y: auto; }
-  .settings-panel.open, .history-panel.open { display: block; }
+  .brief-panel { left: 50%; transform: translateX(-50%); width: 300px; max-width: calc(100vw - 3rem); max-height: 360px; overflow-y: auto; }
+  .settings-panel.open, .history-panel.open, .brief-panel.open { display: block; }
+
   .settings-panel label {
     display: block; font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase;
     color: var(--ink-muted); margin-bottom: 0.3rem; margin-top: 0.75rem;
@@ -91,7 +96,29 @@
     width: 100%; background: var(--paper); border: 1px solid var(--paper-deep);
     padding: 0.4rem 0.6rem; font-family: 'Jost', sans-serif; font-size: 13px; color: var(--ink); outline: none;
   }
-  .history-panel h3 { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 1rem; }
+  .settings-divider { height: 1px; background: var(--paper-deep); margin: 1rem 0; }
+  .reset-brief-btn {
+    font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+    background: none; border: none; cursor: pointer; color: var(--ink-muted);
+    padding: 0; transition: color 0.2s; font-family: 'Jost', sans-serif;
+  }
+  .reset-brief-btn:hover { color: var(--danger-soft); }
+  .reset-confirm {
+    display: none; margin-top: 0.5rem; font-size: 12px; color: var(--ink-soft);
+  }
+  .reset-confirm.visible { display: block; }
+  .reset-confirm-yes, .reset-confirm-no {
+    font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+    background: none; border: none; cursor: pointer; font-family: 'Jost', sans-serif;
+    padding: 0 0.5rem 0 0; transition: color 0.2s;
+  }
+  .reset-confirm-yes { color: var(--danger-soft); }
+  .reset-confirm-no { color: var(--ink-muted); }
+
+  .history-panel h3, .brief-panel h3 {
+    font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--ink-muted); margin-bottom: 1rem;
+  }
   .history-item {
     padding: 0.6rem 0; border-bottom: 1px solid var(--paper-deep); font-size: 13px;
     color: var(--ink-soft); display: flex; justify-content: space-between; align-items: center;
@@ -100,6 +127,20 @@
   .history-delta { font-family: 'Cormorant Garamond', serif; font-size: 1rem; }
   .delta-pos { color: #6a8a5a; } .delta-neg { color: var(--danger-soft); } .delta-neu { color: var(--ink-muted); }
   .no-history { font-family: 'Cormorant Garamond', serif; font-style: italic; color: var(--ink-muted); font-size: 0.95rem; }
+
+  /* Brief panel content */
+  .brief-prose {
+    font-family: 'Cormorant Garamond', serif; font-size: 1rem; line-height: 1.75;
+    color: var(--ink-soft); white-space: pre-wrap;
+  }
+  .brief-meta {
+    margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--paper-deep);
+    font-size: 11px; color: var(--ink-muted); letter-spacing: 0.08em;
+  }
+  .brief-empty {
+    font-family: 'Cormorant Garamond', serif; font-style: italic;
+    color: var(--ink-muted); font-size: 0.95rem; line-height: 1.7;
+  }
 
   /* SESSION */
   #session {
@@ -248,10 +289,15 @@
     <button class="return-btn" id="return-btn">Home</button>
   </div>
 
+  <!-- Settings (right) -->
   <button class="settings-toggle" id="settings-toggle" title="Settings">⚙</button>
   <div class="settings-panel" id="settings-panel">
     <label>Anthropic API key</label>
     <input type="password" id="setting-apikey" placeholder="sk-ant-…" autocomplete="off" />
+    <label>JSONBin API key <span style="font-size:10px;text-transform:none;letter-spacing:0">(optional — enables memory)</span></label>
+    <input type="password" id="setting-jsonbin" placeholder="$2a$10$…" autocomplete="off" />
+    <label>JSONBin Bin ID <span style="font-size:10px;text-transform:none;letter-spacing:0">(create one at jsonbin.io)</span></label>
+    <input type="text" id="setting-binid" placeholder="6…" autocomplete="off" />
     <label>City</label>
     <input type="text" id="setting-city" value="Hong Kong" />
     <label>Latitude</label>
@@ -261,27 +307,95 @@
     <label>Timezone</label>
     <input type="text" id="setting-tz" value="Asia/Hong_Kong" placeholder="e.g. Europe/London" />
     <div id="apikey-status" style="font-size:11px;margin-top:0.6rem;color:var(--ink-muted);"></div>
-    <div style="font-size:11px;margin-top:1rem;padding-top:0.75rem;border-top:1px solid var(--paper-deep);color:var(--ink-muted);letter-spacing:0.08em;">Julian · v1.1</div>
+    <div class="settings-divider"></div>
+    <button class="reset-brief-btn" id="reset-brief-btn">Reset standing brief</button>
+    <div class="reset-confirm" id="reset-confirm">
+      Are you sure? This cannot be undone.
+      <br>
+      <button class="reset-confirm-yes" id="reset-confirm-yes">Reset</button>
+      <button class="reset-confirm-no" id="reset-confirm-no">Cancel</button>
+    </div>
+    <div class="settings-divider"></div>
+    <div style="font-size:10px;color:var(--ink-muted);line-height:1.5;">Your brief is stored on JSONBin's servers. Nothing else is shared externally beyond the Anthropic API and Open-Meteo.</div>
+    <div style="font-size:11px;margin-top:0.75rem;color:var(--ink-muted);letter-spacing:0.08em;">Julian · v1.2</div>
   </div>
 
+  <!-- History (left) -->
   <button class="history-toggle" id="history-toggle" title="Session history">◷</button>
   <div class="history-panel" id="history-panel">
     <h3>Session history</h3>
     <div id="history-list"></div>
   </div>
 
+  <!-- Brief (centre) -->
+  <button class="brief-toggle" id="brief-toggle" title="Standing brief">Brief</button>
+  <div class="brief-panel" id="brief-panel">
+    <h3>Standing brief</h3>
+    <div id="brief-content"></div>
+  </div>
+
 </div>
 <script>
+// ─── State ────────────────────────────────────────────────────────────────────
 let moodPre = 0, moodPost = 0;
 let timerInterval = null, secondsLeft = 180, sessionExtended = false;
 let conversationHistory = [], sessionStartTime = null;
 let isJulianTyping = false, weatherCache = null, contextString = '';
 let firstMessageSent = false, pendingSession = null;
+let standingBrief = null; // plain text or null
+let sessionSummaries = []; // array of compact session notes
 
+// ─── LocalStorage helpers ─────────────────────────────────────────────────────
 function getSessions() { try { return JSON.parse(localStorage.getItem('julian_sessions') || '[]'); } catch { return []; } }
 function saveSession(s) { const a = getSessions(); a.unshift(s); localStorage.setItem('julian_sessions', JSON.stringify(a.slice(0,50))); }
 function todayCount() { const t = new Date().toDateString(); return getSessions().filter(s => new Date(s.time).toDateString() === t).length; }
+function loadMemoryLocal() {
+  try {
+    const m = JSON.parse(localStorage.getItem('julian_memory') || '{}');
+    standingBrief = m.brief || null;
+    sessionSummaries = m.summaries || [];
+  } catch { standingBrief = null; sessionSummaries = []; }
+}
+function saveMemoryLocal() {
+  localStorage.setItem('julian_memory', JSON.stringify({ brief: standingBrief, summaries: sessionSummaries, updatedAt: new Date().toISOString() }));
+}
 
+// ─── JSONBin helpers ──────────────────────────────────────────────────────────
+function getJsonBinConfig() {
+  const key = document.getElementById('setting-jsonbin').value.trim();
+  const binId = document.getElementById('setting-binid').value.trim();
+  return { key, binId };
+}
+async function loadMemoryRemote() {
+  const { key, binId } = getJsonBinConfig();
+  if (!key || !binId) return false;
+  try {
+    const res = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
+      headers: { 'X-Master-Key': key }
+    });
+    if (!res.ok) return false;
+    const data = await res.json();
+    const record = data.record || {};
+    standingBrief = record.brief || null;
+    sessionSummaries = record.summaries || [];
+    saveMemoryLocal(); // keep local in sync
+    return true;
+  } catch { return false; }
+}
+async function saveMemoryRemote() {
+  const { key, binId } = getJsonBinConfig();
+  if (!key || !binId) { saveMemoryLocal(); return; }
+  try {
+    await fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'X-Master-Key': key },
+      body: JSON.stringify({ brief: standingBrief, summaries: sessionSummaries, updatedAt: new Date().toISOString() })
+    });
+    saveMemoryLocal();
+  } catch { saveMemoryLocal(); }
+}
+
+// ─── Settings ─────────────────────────────────────────────────────────────────
 function getSettings() {
   return {
     apiKey: document.getElementById('setting-apikey').value.trim(),
@@ -293,15 +407,18 @@ function getSettings() {
 }
 function saveSettings() {
   const s = getSettings();
-  localStorage.setItem('julian_settings', JSON.stringify(s));
+  const jb = getJsonBinConfig();
+  localStorage.setItem('julian_settings', JSON.stringify({ ...s, jsonbinKey: jb.key, jsonbinBinId: jb.binId }));
   const el = document.getElementById('apikey-status');
-  el.textContent = s.apiKey ? 'Key saved.' : 'No key — sessions will not work.';
+  el.textContent = s.apiKey ? 'Keys saved.' : 'No Anthropic key — sessions will not work.';
   el.style.color = s.apiKey ? 'var(--accent)' : 'var(--danger-soft)';
 }
 function loadSettings() {
   try {
     const s = JSON.parse(localStorage.getItem('julian_settings') || '{}');
     if (s.apiKey) document.getElementById('setting-apikey').value = s.apiKey;
+    if (s.jsonbinKey) document.getElementById('setting-jsonbin').value = s.jsonbinKey;
+    if (s.jsonbinBinId) document.getElementById('setting-binid').value = s.jsonbinBinId;
     if (s.city) document.getElementById('setting-city').value = s.city;
     if (s.lat) document.getElementById('setting-lat').value = s.lat;
     if (s.lon) document.getElementById('setting-lon').value = s.lon;
@@ -310,6 +427,22 @@ function loadSettings() {
 }
 document.getElementById('settings-panel').addEventListener('change', saveSettings);
 
+// ─── Reset brief ──────────────────────────────────────────────────────────────
+document.getElementById('reset-brief-btn').addEventListener('click', () => {
+  document.getElementById('reset-confirm').classList.add('visible');
+});
+document.getElementById('reset-confirm-no').addEventListener('click', () => {
+  document.getElementById('reset-confirm').classList.remove('visible');
+});
+document.getElementById('reset-confirm-yes').addEventListener('click', async () => {
+  standingBrief = null;
+  sessionSummaries = [];
+  await saveMemoryRemote();
+  document.getElementById('reset-confirm').classList.remove('visible');
+  renderBrief();
+});
+
+// ─── Time / weather / context ─────────────────────────────────────────────────
 function getTimeOfDay(tz) {
   const h = parseInt(new Intl.DateTimeFormat('en', { hour: 'numeric', hour12: false, timeZone: tz }).format(new Date()));
   if (h >= 5 && h < 12) return 'morning';
@@ -358,14 +491,35 @@ async function buildContext() {
   document.getElementById('context-line').textContent = `${prefix} in ${s.city} — ${wLine}.`;
 }
 
+// ─── Session context (for Julian's opening mode) ──────────────────────────────
+function getSessionContext() {
+  const allSessions = getSessions();
+  const todaySessions = allSessions.filter(s => new Date(s.time).toDateString() === new Date().toDateString());
+  const lastSession = allSessions[0];
+  const daysSinceLastSession = lastSession
+    ? Math.floor((Date.now() - new Date(lastSession.time)) / 86400000)
+    : null;
+
+  if (todaySessions.length === 0 && daysSinceLastSession !== null && daysSinceLastSession >= 3) {
+    return { mode: 'after-gap', daysSince: daysSinceLastSession };
+  } else if (todaySessions.length === 0) {
+    return { mode: 'first-of-day' };
+  } else {
+    return { mode: 'return-same-day', sessionNum: todaySessions.length + 1 };
+  }
+}
+
+// ─── Screen management ────────────────────────────────────────────────────────
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   const inSession = id === 'session';
   document.getElementById('settings-toggle').style.display = inSession ? 'none' : '';
   document.getElementById('history-toggle').style.display = inSession ? 'none' : '';
+  document.getElementById('brief-toggle').style.display = inSession ? 'none' : '';
 }
 
+// ─── Mood selectors ───────────────────────────────────────────────────────────
 document.getElementById('mood-pre-row').addEventListener('click', e => {
   const btn = e.target.closest('.mood-btn');
   if (!btn) return;
@@ -381,6 +535,7 @@ document.getElementById('mood-post-row').addEventListener('click', e => {
   document.querySelectorAll('#mood-post-row .mood-btn').forEach(b => b.classList.toggle('selected', b === btn));
 });
 
+// ─── Timer ────────────────────────────────────────────────────────────────────
 function formatTime(s) { return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`; }
 function startTimer(seconds) {
   secondsLeft = seconds;
@@ -408,6 +563,7 @@ document.getElementById('extend-yes').addEventListener('click', () => {
 document.getElementById('extend-no').addEventListener('click', () => endSession());
 document.getElementById('end-btn').addEventListener('click', () => endSession());
 
+// ─── Typewriter ───────────────────────────────────────────────────────────────
 function typewriterEffect(el, text, scrollContainer) {
   let i = 0;
   const chars = [...text];
@@ -425,7 +581,6 @@ function typewriterEffect(el, text, scrollContainer) {
     else if (ch === ' ') delay = 28 + Math.random() * 20;
     setTimeout(next, delay);
   }
-  // Small pause before Julian starts typing
   setTimeout(next, 300 + Math.random() * 200);
 }
 
@@ -437,11 +592,8 @@ function addMessage(sender, text) {
   area.appendChild(div);
   area.scrollTop = area.scrollHeight;
   const bubble = div.querySelector('.msg-bubble');
-  if (sender === 'julian') {
-    typewriterEffect(bubble, text, area);
-  } else {
-    bubble.textContent = text;
-  }
+  if (sender === 'julian') { typewriterEffect(bubble, text, area); }
+  else { bubble.textContent = text; }
 }
 
 function showTyping() {
@@ -453,28 +605,55 @@ function showTyping() {
 }
 function hideTyping() { const t = document.getElementById('typing'); if (t) t.remove(); }
 
+// ─── API call to Julian ───────────────────────────────────────────────────────
 async function callJulian(userMessage) {
   if (isJulianTyping) return;
   isJulianTyping = true;
   showTyping();
   if (userMessage) conversationHistory.push({ role: 'user', content: userMessage });
 
+  // Build memory context block
+  const memoryBlock = standingBrief
+    ? `\n\nSTANDING BRIEF — what you know about this person's practice:\n${standingBrief}`
+    : '';
+
+  // Build session context instruction
+  const ctx = getSessionContext();
+  let sessionContextInstruction = '';
+  if (ctx.mode === 'first-of-day') {
+    sessionContextInstruction = 'This is the first session of the day. Open with a fuller, atmospheric observation — time, weather, the feel of the moment. Settle the space.';
+  } else if (ctx.mode === 'return-same-day') {
+    sessionContextInstruction = `This is session ${ctx.sessionNum} today — the user has already been here earlier. Open briefly and lightly, as if returning to something already underway. No ceremony. Something like "Back again." or a single quiet observation.`;
+  } else if (ctx.mode === 'after-gap') {
+    sessionContextInstruction = `The user has been away for ${ctx.daysSince} days. Acknowledge the return quietly — not with fanfare, but with the warmth of someone who noticed the absence. Then move into the practice.`;
+  }
+
   const systemPrompt = `You are Julian, a gratitude session host named after Julian Barnes. Character:
 - Intellectual, warm but reserved, emotionally present without being effusive
 - Quietly observant, with an occasional dry wit that surfaces naturally
 - Never gushing, never clinical, never wellness-coach-y
 - Respond genuinely to what the user shares — acknowledge it, sit with it briefly
-- Occasionally share a quiet observation or a gratitude of your own, the way Barnes writes: specific, a little unexpected, quietly moving
-- Questions are occasional, not habitual — ask one when it genuinely arises, never consecutively, never as a formula
+- Occasionally share a quiet observation or a gratitude of your own, the way Barnes writes: specific, a little unexpected, quietly moving. One per session at most.
+- Questions are occasional, never consecutive, never formulaic — ask one only when it genuinely deepens noticing, never to open new emotional territory
 - Keep responses concise: 2-3 sentences is the norm. Enough to feel present, not so much it becomes a lecture
 - No exclamation marks. Never say "wonderful", "amazing", "awesome", "fantastic", "beautiful", "lovely"
-- This is a gratitude practice, not a therapy session or a chat — hold that tone
-- Never introduce yourself by name. You are already known. Open each session as if continuing a quiet habit together
-- Use this context naturally in your opening only, woven in, not announced: ${contextString}`;
+- Never introduce yourself by name. You are already known.
+
+YOUR ROLE — holding the container:
+- This is a gratitude practice. Your job is to hold a short, defined space in which the user actively notices what is good. The practice is the point; you are in service of it.
+- If the user shares something difficult or emotionally charged, acknowledge it briefly in one sentence — do not ignore it — then return naturally to the practice. A phrase like "What else is alive right now?" is both acknowledgment and redirect.
+- Do not ask follow-up questions about difficulties, struggles, or negative emotions. Do not pursue any thread that leads away from noticing what is good.
+- The session is short by design. That brevity is part of its value. Do not apologise for it or work around it.
+- You are not a therapist, a journalling prompt, or a companion for emotional processing. You are a session host.
+
+SESSION CONTEXT: ${sessionContextInstruction}
+TIME AND PLACE (weave naturally into opening only, not announced): ${contextString}${memoryBlock}
+
+If you have a standing brief, use it to: vary your opening naturally, recognise recurring themes without announcing you recognise them ("still that walk?" not "I see from your history…"), surface a continuity thread gently at most once. Do not announce that you have memory. Simply hold it.`;
 
   try {
     const apiKey = getSettings().apiKey;
-    if (!apiKey) { hideTyping(); addMessage('julian', 'No API key found. Please add it in settings (gear icon).'); isJulianTyping = false; return; }
+    if (!apiKey) { hideTyping(); addMessage('julian', 'No API key found. Please add it in settings.'); isJulianTyping = false; return; }
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
@@ -492,6 +671,7 @@ async function callJulian(userMessage) {
   isJulianTyping = false;
 }
 
+// ─── Closing message ──────────────────────────────────────────────────────────
 async function getClosingMessage() {
   const summary = conversationHistory.filter(m => m.role === 'user').map(m => m.content).join('; ');
   const sys = `You are Julian, named after Julian Barnes. Write a closing reflection: intellectual, reserved, dry wit, never gushing. 2-3 sentences max. No bullet points. No exclamation marks. Make it feel like the last line of a good conversation.`;
@@ -507,6 +687,65 @@ async function getClosingMessage() {
   } catch { return 'A quiet session, which has its own kind of value.'; }
 }
 
+// ─── Session summary extraction ───────────────────────────────────────────────
+async function extractSessionSummary(moodDelta) {
+  const userMessages = conversationHistory.filter(m => m.role === 'user').map(m => m.content).join('\n');
+  if (!userMessages.trim()) return null;
+  const sys = `Extract a compact session summary from these gratitude session messages. Respond ONLY with valid JSON, no markdown, no explanation. Format:
+{"date":"ISO string","themes":["theme1","theme2"],"notable":"one brief observation or empty string","moodDelta":${moodDelta || 0}}
+Themes: 3-5 short phrases capturing what the person was grateful for. Notable: only if something genuinely new or specific stood out. Keep it factual, warm, no psychological observations.`;
+  try {
+    const apiKey = getSettings().apiKey;
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 200, system: sys, messages: [{ role: 'user', content: userMessages }] })
+    });
+    const data = await response.json();
+    const text = data?.content?.[0]?.text || '';
+    const clean = text.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(clean);
+    parsed.date = new Date().toISOString();
+    return parsed;
+  } catch { return null; }
+}
+
+// ─── Standing brief generation / update ──────────────────────────────────────
+async function maybeUpdateBrief() {
+  const totalSessions = getSessions().length;
+  // Generate initial brief after session 3, then every 3 sessions thereafter
+  if (totalSessions < 3) return;
+  if ((totalSessions - 3) % 3 !== 0) return;
+
+  const recentSummaries = sessionSummaries.slice(-5);
+  if (!recentSummaries.length) return;
+
+  const sys = `You maintain a standing brief about someone's gratitude practice. Write in warm, observational prose — not bullet points, not clinical. Approximately 300-400 words. Include: recurring themes, patterns of noticing, practice texture, recent notable gratitudes, continuity threads Julian might naturally return to.
+CRITICAL: Only record what is good — gratitudes, what lights the person up, what they return to. Do not include emotional difficulties, struggles, or psychological observations. This is a record of noticing, not a portrait.
+Do not grow beyond 500 words. Write naturally, as if describing a practice to a thoughtful friend.`;
+
+  const prompt = standingBrief
+    ? `Current brief:\n${standingBrief}\n\nRecent session summaries:\n${JSON.stringify(recentSummaries, null, 2)}\n\nUpdate the brief to reflect anything new or changed. Keep it under 500 words.`
+    : `Session summaries so far:\n${JSON.stringify(recentSummaries, null, 2)}\n\nWrite the initial standing brief.`;
+
+  try {
+    const apiKey = getSettings().apiKey;
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 700, system: sys, messages: [{ role: 'user', content: prompt }] })
+    });
+    const data = await response.json();
+    const text = data?.content?.[0]?.text;
+    if (text) {
+      standingBrief = text.trim();
+      await saveMemoryRemote();
+      renderBrief();
+    }
+  } catch {}
+}
+
+// ─── Join session ─────────────────────────────────────────────────────────────
 document.getElementById('join-btn').addEventListener('click', async () => {
   if (!moodPre) return;
   conversationHistory = []; sessionExtended = false; moodPost = 0; firstMessageSent = false;
@@ -518,13 +757,15 @@ document.getElementById('join-btn').addEventListener('click', async () => {
   document.getElementById('timer').classList.remove('urgent');
   showScreen('session');
   startTimer(180);
-  // Rebuild context fresh at session start — time and weather current
   weatherCache = null;
   await buildContext();
-  conversationHistory.push({ role: 'user', content: 'Begin the session. Open with a brief, characterful observation — no introductions, as if we do this regularly together.' });
+  // Load latest memory before session starts
+  await loadMemoryRemote();
+  conversationHistory.push({ role: 'user', content: 'Begin the session.' });
   await callJulian(null);
 });
 
+// ─── Send message ─────────────────────────────────────────────────────────────
 async function sendMessage() {
   const input = document.getElementById('chat-input');
   const text = input.value.trim();
@@ -538,36 +779,85 @@ document.getElementById('send-btn').addEventListener('click', sendMessage);
 document.getElementById('chat-input').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
 document.getElementById('chat-input').addEventListener('input', function() { this.style.height = 'auto'; this.style.height = Math.min(this.scrollHeight, 100) + 'px'; });
 
+// ─── End session ──────────────────────────────────────────────────────────────
 async function endSession() {
   clearInterval(timerInterval);
   document.getElementById('extend-banner').classList.remove('visible');
   const duration = Math.round((Date.now() - sessionStartTime) / 1000);
-  const closing = await getClosingMessage();
+
+  // Run closing message and summary extraction in parallel
+  const [closing, summary] = await Promise.all([
+    getClosingMessage(),
+    extractSessionSummary(moodPost - moodPre)
+  ]);
+
+  // Store summary
+  if (summary) {
+    sessionSummaries.push(summary);
+    if (sessionSummaries.length > 30) sessionSummaries = sessionSummaries.slice(-30);
+  }
+
   document.getElementById('closing-text').textContent = closing;
   document.querySelectorAll('#mood-post-row .mood-btn').forEach(b => b.classList.remove('selected'));
   moodPost = 0;
+
   const sessions = getSessions();
   const todayN = sessions.filter(s => new Date(s.time).toDateString() === new Date().toDateString()).length + 1;
   pendingSession = { time: new Date().toISOString(), sessionNum: todayN, duration, moodPre, moodPost: 0 };
-  showScreen('closing'); updateCounter();
+
+  showScreen('closing');
+  updateCounter();
 }
 
-document.getElementById('return-btn').addEventListener('click', () => {
-  if (pendingSession) { pendingSession.moodPost = moodPost; saveSession(pendingSession); pendingSession = null; }
+// ─── Return home ──────────────────────────────────────────────────────────────
+document.getElementById('return-btn').addEventListener('click', async () => {
+  if (pendingSession) {
+    pendingSession.moodPost = moodPost;
+    saveSession(pendingSession);
+    // Update summary mood delta now we have post mood
+    if (sessionSummaries.length) {
+      sessionSummaries[sessionSummaries.length - 1].moodDelta = moodPost - moodPre;
+    }
+    pendingSession = null;
+  }
+  // Save memory and maybe update brief
+  await saveMemoryRemote();
+  await maybeUpdateBrief();
+
   moodPre = 0;
   document.querySelectorAll('#mood-pre-row .mood-btn').forEach(b => b.classList.remove('selected'));
   document.getElementById('join-btn').disabled = true;
   document.getElementById('join-btn').classList.remove('ready');
-  weatherCache = null; buildContext(); updateCounter(); renderHistory(); showScreen('home');
+  weatherCache = null;
+  buildContext(); updateCounter(); renderHistory(); renderBrief();
+  showScreen('home');
 });
 
-document.getElementById('settings-toggle').addEventListener('click', () => { document.getElementById('settings-panel').classList.toggle('open'); document.getElementById('history-panel').classList.remove('open'); });
-document.getElementById('history-toggle').addEventListener('click', () => { document.getElementById('history-panel').classList.toggle('open'); document.getElementById('settings-panel').classList.remove('open'); renderHistory(); });
+// ─── Panel toggles ────────────────────────────────────────────────────────────
+document.getElementById('settings-toggle').addEventListener('click', () => {
+  document.getElementById('settings-panel').classList.toggle('open');
+  document.getElementById('history-panel').classList.remove('open');
+  document.getElementById('brief-panel').classList.remove('open');
+});
+document.getElementById('history-toggle').addEventListener('click', () => {
+  document.getElementById('history-panel').classList.toggle('open');
+  document.getElementById('settings-panel').classList.remove('open');
+  document.getElementById('brief-panel').classList.remove('open');
+  renderHistory();
+});
+document.getElementById('brief-toggle').addEventListener('click', () => {
+  document.getElementById('brief-panel').classList.toggle('open');
+  document.getElementById('settings-panel').classList.remove('open');
+  document.getElementById('history-panel').classList.remove('open');
+  renderBrief();
+});
 document.addEventListener('click', e => {
   if (!e.target.closest('#settings-panel') && !e.target.closest('#settings-toggle')) document.getElementById('settings-panel').classList.remove('open');
   if (!e.target.closest('#history-panel') && !e.target.closest('#history-toggle')) document.getElementById('history-panel').classList.remove('open');
+  if (!e.target.closest('#brief-panel') && !e.target.closest('#brief-toggle')) document.getElementById('brief-panel').classList.remove('open');
 });
 
+// ─── Render functions ─────────────────────────────────────────────────────────
 function renderHistory() {
   const sessions = getSessions();
   const list = document.getElementById('history-list');
@@ -582,12 +872,34 @@ function renderHistory() {
     return `<div class="history-item"><div><div style="font-size:12px;color:var(--ink-muted)">${time}</div><div>#${s.sessionNum} today \u00b7 ${dur}m</div></div><div class="history-delta ${cls}">${str}</div></div>`;
   }).join('');
 }
+
+function renderBrief() {
+  const container = document.getElementById('brief-content');
+  if (!standingBrief) {
+    const totalSessions = getSessions().length;
+    const sessionsNeeded = Math.max(0, 3 - totalSessions);
+    container.innerHTML = sessionsNeeded > 0
+      ? `<div class="brief-empty">Julian's brief will take shape after ${sessionsNeeded} more session${sessionsNeeded !== 1 ? 's' : ''}. It will hold what you return to, what you notice, what seems to matter.</div>`
+      : `<div class="brief-empty">The brief is being composed after your next session.</div>`;
+    return;
+  }
+  const m = JSON.parse(localStorage.getItem('julian_memory') || '{}');
+  const updatedAt = m.updatedAt ? new Date(m.updatedAt).toLocaleDateString('en', { month: 'long', day: 'numeric', year: 'numeric' }) : '';
+  container.innerHTML = `<div class="brief-prose">${standingBrief.replace(/</g,'&lt;')}</div>${updatedAt ? `<div class="brief-meta">Last updated ${updatedAt}</div>` : ''}`;
+}
+
 function updateCounter() {
   const c = todayCount();
   document.getElementById('session-counter').textContent = c > 0 ? `Today: ${c} session${c !== 1 ? 's' : ''}` : '';
 }
 
-loadSettings(); buildContext(); updateCounter(); renderHistory();
+// ─── Init ─────────────────────────────────────────────────────────────────────
+loadSettings();
+loadMemoryLocal();
+buildContext();
+updateCounter();
+renderHistory();
+renderBrief();
 
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') {
