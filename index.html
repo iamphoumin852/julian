@@ -317,7 +317,7 @@
     </div>
     <div class="settings-divider"></div>
     <div style="font-size:10px;color:var(--ink-muted);line-height:1.5;">Your brief is stored in a private GitHub Gist. Nothing else is shared externally beyond the Anthropic API and Open-Meteo.</div>
-    <div style="font-size:11px;margin-top:0.75rem;color:var(--ink-muted);letter-spacing:0.08em;">Julian · v1.2</div>
+    <div style="font-size:11px;margin-top:0.75rem;color:var(--ink-muted);letter-spacing:0.08em;">Julian · v1.2.1</div>
   </div>
 
   <!-- History (left) -->
@@ -728,13 +728,17 @@ async function maybeUpdateBrief() {
   const recentSummaries = sessionSummaries.slice(-5);
   if (!recentSummaries.length) return;
 
-  const sys = `You maintain a standing brief about someone's gratitude practice. Write in warm, observational prose — not bullet points, not clinical. Approximately 300-400 words. Include: recurring themes, patterns of noticing, practice texture, recent notable gratitudes, continuity threads Julian might naturally return to.
-CRITICAL: Only record what is good — gratitudes, what lights the person up, what they return to. Do not include emotional difficulties, struggles, or psychological observations. This is a record of noticing, not a portrait.
-Do not grow beyond 500 words. Write naturally, as if describing a practice to a thoughtful friend.`;
+  const sys = `You are writing a standing brief for Julian, an AI gratitude session host. The brief describes the practice of the person Julian hosts — referred to throughout as "they" or "them". Julian is not the subject; the user is.
+
+Write in warm, observational third-person prose — not bullet points, not clinical. Approximately 300-400 words. Include: recurring themes in what they are grateful for, patterns in how they notice things, the texture of their practice (frequency, time of day, mood arc), recent notable gratitudes worth remembering, continuity threads Julian might naturally return to in conversation.
+
+CRITICAL: Only record what is good — gratitudes, what lights them up, what they return to. Do not include emotional difficulties, struggles, or psychological observations. This is a record of noticing, not a portrait. Never refer to Julian in the first person — Julian will read this brief, not write it.
+
+Do not grow beyond 500 words. Write as if briefing a thoughtful host before a session.`;
 
   const prompt = standingBrief
-    ? `Current brief:\n${standingBrief}\n\nRecent session summaries:\n${JSON.stringify(recentSummaries, null, 2)}\n\nUpdate the brief to reflect anything new or changed. Keep it under 500 words.`
-    : `Session summaries so far:\n${JSON.stringify(recentSummaries, null, 2)}\n\nWrite the initial standing brief.`;
+    ? `Current brief:\n${standingBrief}\n\nRecent session summaries:\n${JSON.stringify(recentSummaries, null, 2)}\n\nUpdate the brief to reflect anything new or changed. Keep it under 500 words. Remember: write about the user in third person — "they", "them". Julian is the host reading this, not the subject.`
+    : `Session summaries so far:\n${JSON.stringify(recentSummaries, null, 2)}\n\nWrite the initial standing brief about the user's practice. Use third person throughout — "they", "them". Julian will read this brief before each session.`;
 
   try {
     const apiKey = getSettings().apiKey;
